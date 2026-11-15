@@ -18,6 +18,21 @@ Core scientific goals:
 3. Find where water and chemical building blocks of life are from, and how likely they are to be on other planets. Use absorption spectroscopy.
 
 
+Challenge objectives:
+
+1.Create a workable frontend site that could facilitate future discoveries and observations of
+stellar bodies - integrated frontend and backend, with searching functions and customisation
+for radius of searching, how many exposures, etc.
+
+2.Simple to use and explained well for users
+
+3.Data analysis and cleaning to ensure images and slideshows are able to be analysed
+
+4.Work as a multidisciplinary team to foster a delegation and cooperation framework
+
+5.Create a demo to demonstrate how the finished product could be used for research
+
+
 
 R Draconis:
 About:
