@@ -1,6 +1,8 @@
 # Provisional observation contract: version 1
 
 **Proposed application interface; Artem and Niyati must review before real exports.**
+
+This document covers curated static publications. The integrated uploaded-run API has a separate [contract and mathematics guide](INTEGRATION.md); generated analysis results are not automatically reviewed publications.
 This does not describe the archive API.
 
 ## Delivery and target

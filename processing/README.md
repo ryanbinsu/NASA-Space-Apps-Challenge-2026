@@ -1,11 +1,15 @@
-# Offline processing boundary
+# Scientific processing boundary
 
-Artem owns future acquisition, FITS processing, alignment and differencing here.
-No executable pipeline or Python dependency environment is implemented in Phase 1.
+Artem owns acquisition, FITS processing, alignment and differencing.
+The supplied implementation is currently [moving_object_pipeline.py](../moving_object_pipeline.py).
+The HTTP adapter in [backend/](../backend/) calls its stages; it does not replace the pipeline with browser mathematics.
 
-Review [the provisional output contract](../docs/DATA_CONTRACT.md) with Ryan and Niyati before real exports.
-Produce browser images and the manifest under public/observations/, with actual source products, release/collection and processing provenance.
-Never label synthetic images as NASA observations. Equal image dimensions alone do not establish comparability.
+Read [the integration/API guide](../docs/INTEGRATION.md) for stage controls, timestamp handling, numerical fixes and known scientific approximations.
+Niyati and Artem should review these before interpreting real observations.
 
-Keep raw downloads and large intermediate products outside Git.
-Choose scientific dependencies and agree on storage when implementing the first real pipeline.
+The curated publication interface remains [DATA_CONTRACT.md](../docs/DATA_CONTRACT.md).
+Generated analysis JSON is a different contract and is not automatically a reviewed NASA/SPHEREx export.
+Keep real dataset/release/product identifiers and processing provenance; never label synthetic test fixtures as NASA observations.
+
+Python 3.12 with requirements.lock.txt is the validated environment.
+Keep bulk downloads and intermediates outside Git; generated local runs go to ignored .runtime/.

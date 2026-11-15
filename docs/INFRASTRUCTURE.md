@@ -1,157 +1,100 @@
-# Current infrastructure and development tooling
+# Current infrastructure and tooling
 
-This describes the repository's implemented setup. It separates tools used to build the application from infrastructure needed to serve it. No deployment has been performed as part of Phase 1.
+## Runtime topology
 
-## 1. What runs where
+The local stack has a browser frontend and a Python processing service.
+npm run dev:full starts Uvicorn on 127.0.0.1:8000, waits for health readiness, then starts Vite on 127.0.0.1:5173.
+The browser uses port 5173; Vite forwards /api to Python. No development CORS middleware is needed.
 
-| Component | Development | Production design |
-| --- | --- | --- |
-| React UI and loader | Browser | Browser |
-| Vite | Local Node development server | Build tool, not an application server |
-| TypeScript and ESLint | Local checks | Run during development/build validation |
-| Manifest and processed assets | Served from public/ by Vite | Static files in dist/ |
-| Python processing | Not implemented | Planned offline preparation, separate from hosting |
-| Vercel | Not configured | Proposed static host |
+The launcher is scripts/dev.mjs and uses Node's built-in child_process. It chooses .venv/bin/python on Linux/macOS or .venv/Scripts/python.exe on Windows.
+API startup failure prevents silently starting an unusable stack. Either child's exit stops its sibling; Ctrl+C stops both.
 
-Node is necessary to install packages, run tooling and build the frontend. The built application needs a static web host; it does not require our own long-running Node server.
+Python code changes require restarting the stack; no Python reload supervisor is configured. Vite handles normal frontend refresh.
 
-There is no backend API, database, authentication, message queue, container setup, cloud storage integration or infrastructure-as-code configuration. There are no environment variables required by the current application.
+## Toolchain and installation
 
-## 2. Toolchain and reproducibility
+- Node 24.22.3 is recorded in .nvmrc; package.json accepts compatible Node 24 releases from that version.
+- npm installs the frontend. npm ci uses package-lock.json; npm install is for intentional dependency changes.
+- Python 3.12 is recorded in .python-version. requirements.txt records direct packages and requirements.lock.txt records the validated complete environment.
+- Install Python dependencies inside .venv as shown in the README. The existing workspace used an ignored managed Python 3.12 toolchain because system Python 3.14 lacked headers needed to build sep.
 
-.nvmrc records Node 24.22.3. package.json permits Node >=24.22.3 and <25. Use the pinned version for the most consistent team setup.
+Use Node/npm/Python from the same operating system as the repository's dependency installation. WSL Linux and Windows node_modules are not interchangeable.
+.tools/ is workspace convenience tooling, not a required path after cloning.
 
-The Phase 1 workspace used npm 11.19.1 bundled with Node. npm is the selected package manager; do not generate competing yarn or pnpm lockfiles.
+## Why each dependency exists
 
-package.json describes scripts and direct dependencies. package-lock.json records the resolved dependency tree, including transitive packages and integrity information.
+React/react-dom render the UI; Vite and its React plugin serve/build it.
+TypeScript and type declaration packages check browser/build code. ESLint, typescript-eslint, React plugins and globals check code patterns.
+No new npm runtime dependency was needed for integration or process management.
 
-```bash
-npm ci
-```
+Scientific libraries were already imported by the supplied pipeline: NumPy, pandas, SEP, matplotlib, SciPy, Astropy, reproject, Astroalign and ImageIO. Pillow supports ordinary image reading/export and preflight dimension checks.
+FastAPI adds the HTTP/parameter boundary, Uvicorn serves it and python-multipart parses file uploads.
+httpx is used by the API regression test client. The current upstream test client emits an httpx-to-httpx2 deprecation warning; tests still pass.
 
-Use this for a clean installation after cloning. It replaces node_modules using the lockfile and fails if the package manifest and lockfile disagree.
+The Python lock includes transitive scientific dependencies. Review both direct and full requirements when changing this environment.
 
-```bash
-npm install
-```
+## Configuration files
 
-Use this when deliberately updating dependency resolution. When adding a dependency, explain its purpose and review both package files. Installation and checks should be performed using the same operating system.
-
-This workspace has an ignored Linux x64 Node distribution in .tools/node-v24.22.3-linux-x64/. The archive was verified against the official release checksum. It is a local convenience, not a repository dependency or a prerequisite path for other developers.
-
-From the repository root in WSL, use it with:
-
-```bash
-export PATH="$PWD/.tools/node-v24.22.3-linux-x64/bin:$PATH"
-node --version
-npm --version
-```
-
-Other machines should install Node through their normal trusted method. nvm is optional, not installed or required by this repository. With nvm already available, nvm install and nvm use read .nvmrc.
-
-## 3. Dependencies and their responsibilities
-
-| Packages | Why they exist |
+| File | Purpose |
 | --- | --- |
-| react, react-dom | Components, local state and browser rendering |
-| vite, @vitejs/plugin-react | Development serving, React refresh and production bundling |
-| typescript | Static analysis of application/configuration code |
-| @types/react, @types/react-dom, @types/node | Type declarations for React and Node tooling |
-| eslint, @eslint/js | Core lint engine and recommended JavaScript rules |
-| typescript-eslint | TypeScript-aware parsing and lint rules |
-| eslint-plugin-react-hooks | Detect common Hook usage mistakes |
-| eslint-plugin-react-refresh | Check export patterns used by development refresh |
-| globals | Define browser/Node globals for ESLint |
+| vite.config.ts | React plugin and /api proxy for dev/preview |
+| tsconfig.json | Strict browser/React checks, no emit |
+| tsconfig.node.json | Separate strict check for Vite configuration |
+| eslint.config.js | Root frontend/tooling lint; sky/ has its own separate configuration |
+| package.json | Frontend scripts and direct npm dependencies |
+| package-lock.json | Resolved npm dependency tree |
+| requirements.txt / requirements.lock.txt | Direct/full Python environment |
+| .nvmrc / .python-version | Team runtime versions |
+| .gitattributes | LF text normalization |
+| .gitignore | Generated/environment/data exclusions |
 
-Exact installed versions are in package.json and the lockfile. TypeScript 6.0 was selected because the installed typescript-eslint peer range excludes TypeScript 7. Review peer compatibility when upgrading the toolchain.
+There are no required environment secrets. SPHEREX_RUNS_DIR optionally changes where Python stores/serves generated runs, particularly in isolated tests.
 
-No Python packages, component library, router, state framework or schema-validation package has been introduced.
+## Commands and generated output
 
-## 4. Development server
+npm run build checks both TypeScript configurations, then writes dist/.
+npm run preview serves that existing build and forwards /api to a separately running API on port 8000.
+npm run lint checks the root app, scripts and frontend tests with warnings treated as failures.
+npm run test:frontend uses Node's built-in test runner; Python tests use unittest and FastAPI's test client.
 
-```bash
-npm run dev
-```
+The build copies public/ into dist/. It does not validate the curated manifest at build time; the browser validator does that when loading.
 
-This runs Vite, normally at http://localhost:5173. Vite transforms TypeScript/JSX for the browser and refreshes changed modules. Serving transformed code is not the same as a full TypeScript check; run typecheck or build separately.
+After building, Uvicorn can serve dist/ directly on port 8000, with /api routes registered first.
+That is a local single-port option, not a deployment. The Python server is started after building so the static directory exists at import time.
 
-For an explicit loopback-only server that fails instead of choosing another port:
+## Storage and resource model
 
-```bash
-npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
-```
-
-Stop with Ctrl+C. The development server is local tooling, not the production hosting plan.
-
-## 5. Configuration and quality checks
-
-| File | Responsibility |
+| Path | Contents / behavior |
 | --- | --- |
-| vite.config.ts | Enable the React plugin; no custom API proxy, aliases or deployment configuration |
-| tsconfig.json | Strict browser/React checking for src/, ES2022 target, no emitted files |
-| tsconfig.node.json | Separate strict check for vite.config.ts using Node types |
-| eslint.config.js | Flat ESLint configuration with recommended JS/TS and React rules |
+| public/observations/ | Curated public manifest and eventual reviewed images |
+| .runtime/runs/<UUID>/ | Generated PNG layers, JSON, CSV and optional candidate plot |
+| OS temporary directory | Uploaded raw inputs, removed after the request |
+| .venv/ | Isolated Python installation |
+| node_modules/ | npm packages |
+| dist/ | Production frontend assets |
+| .tools/ | Local toolchains, temporary browser harness and synthetic fixtures |
 
-Separating browser and Node configuration makes their available APIs explicit. Application code has DOM/Vite types; build configuration has Node types.
+Inputs are bounded to 3–8 files, 20 MiB each, 100 MiB total and 1,048,576 pixels each.
+An analysis rejects more than 200 extracted peaks in any frame and more than 10,000 possible tracklets, avoiding uncontrolled combinatorial linking.
+Only one analysis runs at once in one Python process. Do not add multiple workers assuming the in-memory lock is shared across them.
 
-```bash
-npm run typecheck
-npm run lint
-npm run build
-```
+Runs persist without automatic cleanup and are served publicly to anyone who can reach the local process. Input hashes support identity checking, not proof of scientific authenticity.
+Failed runs may leave empty/partial output directories. Disk usage should be monitored during extended local use.
 
-typecheck checks both TypeScript configurations. lint treats warnings as failures. build runs typecheck first, then Vite. TypeScript checks code; lint checks selected code patterns; neither validates scientific claims or browser rendering.
+## Hosting status and remaining work
 
-The Phase 1 setup passed clean installation, build and lint. Temporary ignored loader fixtures accepted four valid shapes and rejected 17 invalid manifests. These are not a committed test suite or an npm test script.
+No public deployment, CI workflow, database, authentication, queue, remote object store or Docker setup is implemented.
+Vercel was proposed for a static frontend; static hosting alone cannot execute the scientific Python API.
+A future public host must provide a compatible Python runtime/API, same-origin routing or deliberate CORS, storage limits, ingress controls and multi-user operational decisions.
+These are future hosting decisions, not prerequisites added to the local demonstration.
 
-HTTP checks confirmed the development page, manifest and transformed React module were served successfully. Browser-level rendering was not tested.
+Existing sky/ remains a separate Next.js prototype. Its npm lock and configuration are preserved, but it is not launched or linted by the root application commands.
 
-## 6. Build output and proposed hosting
+## Validation and debt
 
-```bash
-npm run build
-npm run preview
-```
+The integration guide records the synthetic mathematical/API and browser checks performed.
+Tests exercise mechanics, not real SPHEREx calibration or scientific discovery validity.
+Temporary Chromium tooling/libraries were placed under ignored .tools/ (the browser binary is in the normal user cache); no browser package was added to the application.
 
-build creates dist/ with an HTML entry, bundled assets and copied public files. preview serves that existing build locally; it does not rebuild it.
-
-public/observations/manifest.json becomes dist/observations/manifest.json. Future public images are copied similarly. Vite does not apply our runtime contract validator to public JSON during the build; the loader validates it when the page runs.
-
-The proposed Vercel setup is a static project rooted at this repository, using npm run build and dist as the output directory. This is a deployment plan, not evidence of an existing Vercel project, URL, integration or successful deployment. Obtain Ryan's approval before deployment.
-
-Vite currently uses its default base path. The manifest loader derives its URL from import.meta.env.BASE_URL. A future subdirectory deployment must configure and verify base-path handling, including future image URL resolution.
-
-Publishing new processed observations requires updating the assets and publishing a new build. There is no runtime write path or automatic archive synchronization.
-
-## 7. Files, public data and source control
-
-| Path / file | Treatment |
-| --- | --- |
-| src/, docs/, processing/README.md, public/ | Source material intended for review and version control |
-| node_modules/ | Generated installed packages; ignored |
-| dist/ | Generated production output; ignored |
-| .tools/ | Workspace-local tools, logs and temporary checks; ignored |
-| .env and .env.* | Ignored; no secrets are required currently |
-| .venv/, __pycache__/, *.py[cod] | Future Python environment/cache artifacts; ignored |
-| .gitattributes | Normalize text files to LF line endings |
-
-Ignoring an environment file is not a security boundary. Anything placed in public/ is served publicly, and any future browser-exposed configuration must be treated as public. Do not place credentials or raw sensitive material in frontend assets.
-
-Git and GitHub are the collaboration tools. There is no configured CI workflow, pre-commit hook, Git LFS or deployment automation. Local checks do not imply that a remote branch has been checked, merged or deployed.
-
-For WSL development, run Linux Node/npm inside Ubuntu for this Linux repository. Avoid sharing node_modules between Windows and WSL because installed platform-specific binaries may differ.
-
-## 8. Known operational debt
-
-The Phase 1 npm audit reported seven moderate development-tool advisories arising from minimatch in the typescript-eslint dependency chain. Production-only audit reported zero. These are historical validation results, not a guarantee about future advisories.
-
-Recheck using:
-
-```bash
-npm audit
-npm audit --omit=dev
-```
-
-npm suggested a forced downgrade; none was applied. Revisit the upstream lint dependency chain before introducing a major override or breaking dependency change.
-
-The team still needs scientifically reviewed real data, browser verification, an agreed asset-size/storage strategy, and approved deployment work. These remain separate from the working frontend foundation.
+The earlier npm audit reported moderate issues in the development lint chain. Recheck npm audit and npm audit --omit=dev when changing dependencies rather than treating historical results as current guarantees.
+No forced downgrade, database or public deployment was introduced.

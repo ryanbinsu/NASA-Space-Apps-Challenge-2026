@@ -1,88 +1,83 @@
-# SPHEREx Motion Explorer — Claude Code working instructions
+# SPHEREx Motion Explorer — Claude Code instructions
 
-Read [AGENTS.md](AGENTS.md) first and follow its shared engineering rules. This file adds repository context and practical commands for Claude Code users. Keep shared rules consistent across both files.
+Read [AGENTS.md](AGENTS.md) and follow the shared engineering rules. Keep these files consistent.
 
-## Collaboration and scope
+## Collaboration and approved scope
 
-Act as Ryan's senior engineering pair and mentor. Explain significant changes through the problem, recommendation, main alternative and trade-off. Help Ryan understand and own the result; avoid long explanations of trivial syntax.
+Act as Ryan's engineering pair and mentor. Explain significant changes through the problem, recommendation, alternative and trade-off.
+Respect ownership: Ryan architecture/API/integration/repository; Artem processing; Theo UI; Niyati scientific validation; Pranav documentation/demo.
 
-The approved product milestone is Phase 1: a React/TypeScript foundation, static manifest boundary and documentation.
+The user has approved local backend/frontend integration beyond Phase 1: uploads, all five supplied pipeline stages, playback/difference layers, candidate metrics and exports.
+Do not treat old Phase 1 restrictions as a reason to leave this authorized integration incomplete.
+Live archive acquisition, new scientific algorithms, deployment and additional infrastructure still need a concrete approved task.
 
-Do not implement a viewer, coordinate search, playback, differencing, archive integration or Python pipeline without approval for the next milestone. Do not add backend services, a database, authentication, Docker, state frameworks or other infrastructure without a concrete approved need.
+Proceed with routine work already authorized. Ask before major scope changes, destructive operations, commits, pushes or deployment.
+Inspect Git state and existing files before edits; preserve unrelated and uncommitted work.
 
-Proceed with routine work already authorized. Ask before major scope changes, destructive operations, commits, pushes or deployment. Never assume permission to publish because a local build passed.
+## Read first
 
-## Team ownership
-
-| Owner | Primary responsibility |
-| --- | --- |
-| Ryan | Architecture, services, integration, repository and deployment |
-| Artem | Data acquisition, FITS processing, alignment and differencing |
-| Theo | React UI/UX and visualisations |
-| Niyati | Astronomy research, target selection and scientific validation |
-| Pranav | Documentation, judging requirements and demonstration |
-
-Keep changes focused. Coordinate boundary changes instead of redesigning another owner's work without discussion.
-
-## Read the repository before editing
-
-Inspect Git state and relevant existing files; preserve unrelated and uncommitted work. Do not assume an untracked file is disposable.
-
-Start with:
-- [README.md](README.md): setup, commands and team workflow.
-- [docs/CODEBASE.md](docs/CODEBASE.md): actual runtime flow and file responsibilities.
-- [docs/INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md): tooling, build, local environment and hosting status.
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): design decisions and boundaries.
-- [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md): provisional producer/consumer agreement.
+- [README.md](README.md): current setup and workflows.
+- [docs/CODEBASE.md](docs/CODEBASE.md): actual component and request flow.
+- [docs/INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md): local topology/tooling/hosting status.
+- [docs/INTEGRATION.md](docs/INTEGRATION.md): API contract, mathematical corrections and caveats.
+- [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md): separate curated static-data agreement.
 
 ## Current implementation
 
-src/main.tsx mounts App. App loads the static manifest through src/services/observations.ts and renders loading, error, empty or ready-count states.
+The canonical frontend is the root React/TypeScript/Vite app.
+src/App.tsx renders the API status, published-observation browser and upload workbench.
+Components use typed services to consume either the curated manifest or the FastAPI result.
 
-src/types/observations.ts defines consumer types. parseManifest validates fetched JSON at runtime. Keep the contract, types and validator synchronized.
+backend/app.py handles uploads, bounded concurrency and artifact serving.
+backend/analysis.py orchestrates moving_object_pipeline.py and exports four image layers, CSV, JSON and a top-candidate plot.
+Generated outputs live in ignored .runtime/, while raw inputs are temporary.
+The Python pipeline uses scientific libraries already present in the supplied code; do not duplicate its mathematics in JavaScript.
 
-public/observations/manifest.json is empty. No image viewer exists. processing/ contains a README only. Vercel hosting is planned; no deployment or CI configuration is implemented.
+sky/ is the earlier independent Next.js prototype, preserved unchanged. Use root npm commands for the integrated site. If changing sky/, read its AGENTS.md and version-specific local Next.js documentation first.
+Do not import its placeholder images or approximate target catalogue as verified scientific data.
 
-Prefer simple local React state and plain CSS until a concrete need justifies more.
+## Environment and commands
 
-## Commands and environment
-
-Use npm, package-lock.json and Node 24.22.3 from .nvmrc. Use npm ci for clean installation; use npm install for intentional dependency changes. Do not introduce competing lockfiles.
-
-Run from the repository root:
+Node 24.22.3 and npm; Python 3.12 in .venv. Use package-lock.json and requirements.lock.txt.
+Do not generate competing JavaScript lockfiles or install Python packages globally.
 
 ```bash
 npm ci
-npm run dev
-npm run typecheck
-npm run build
-npm run lint
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements.lock.txt
+npm run dev:full
 ```
 
-npm run preview serves an existing production build. Build output is dist/.
+The integrated site is http://localhost:5173; internal API is http://127.0.0.1:8000.
+The launcher stops both services on Ctrl+C. Restart after Python changes.
 
-The existing WSL workspace may have an ignored local Node installation. If needed:
+Validation:
 
 ```bash
-export PATH="$PWD/.tools/node-v24.22.3-linux-x64/bin:$PATH"
+npm run build
+npm run lint
+npm run test:frontend
+.venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-Do not assume .tools/ exists after cloning. Keep Node/npm and node_modules in the same operating system.
+For this existing WSL workspace, ignored .tools/ may contain Node and a managed Python installation. Do not assume these exist after cloning. Keep tools and dependencies within one operating system.
 
-## Validation and handover
+## Contracts and validation
 
-For code changes, run build, lint and appropriate focused checks. For documentation-only edits, verify statements against source, local links and the Git diff; do not claim unperformed checks.
+Keep docs, TypeScript types, runtime checks, Python outputs and focused tests aligned when changing interfaces.
+The uploaded-run API contract differs from the curated manifest. Do not silently treat generated runs as reviewed publications.
+Coordinate matching searches published target centers only; no live archive query is implemented.
 
-There is no committed automated test suite or npm test script. Previous temporary loader checks and HTTP checks are documented historical results. Do not claim those ran in the current session unless rerun.
-
-Report what changed, why, actual validation results and remaining limitations. Browser rendering requires actual browser verification; successful HTTP serving alone does not establish it.
-
-Known Phase 1 dependency debt: moderate advisories in the development lint dependency chain. Inspect current npm audit output before describing current status; do not run npm audit fix --force without approval.
+Report actual checks and failures. Successful HTTP requests are not browser verification.
+Synthetic regression tests and temporary browser checks do not establish scientific validity.
+Known earlier lint audit findings and the test client's deprecation warning are documented; inspect current output before reporting their status. Do not run npm audit fix --force without approval.
 
 ## Scientific integrity
 
-The JSON contract is provisional pending Artem and Niyati's review. Preserve actual dataset/product identifiers and processing provenance. Never fabricate timestamps, observations, spectral bands or archive capabilities.
-
-Clearly label any synthetic fixtures and keep them out of published astronomical assets. Ready status, valid JSON and matching image dimensions do not establish scientific comparability or a detection.
-
-Use the official references linked in the README for new archive/science claims; verify them before relying on details not already supplied. Distinguish implemented behavior, proposed decisions and unresolved scientific questions.
+Never fabricate observations, dates, bands, provenance or archive capabilities.
+Complete timestamps produce pixel/day speed; unknown times consistently use frame units. Do not label frame indices as UTC dates.
+Use actual WCS for RA/Dec; user-entered region coordinates do not create an astrometric solution.
+Candidate flux is integrated Z-map signal, not calibrated photometry.
+Z is approximate and ranking scores are uncalibrated heuristics, not probabilities or Planet X detections.
+Keep fixtures explicitly synthetic and outside published astronomical assets.
+Artem/Niyati must review comparability, wavelength selections, calibration and scientific interpretation before demonstrating real data.
