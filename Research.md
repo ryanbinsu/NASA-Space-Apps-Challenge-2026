@@ -32,7 +32,7 @@ By using Wien’s law and R Draconis’ cool temperatures, we can predict the pe
 
 How the pulsation works briefly: Partial ionisation of hydrogen makes the layer more opaque, trapping heat. The surface that traps heat, and builds up pressure and radiation underneath the layer, which eventually means the pressure overcomes the gravitational forces, pushing the atmosphere of the star outwards, the radius of the star will increase. The gas will expand and cool, electrons will combine with atoms. When electrons combine, this makes the gas more transparent and therefore heat escapes causing a pressure drop. And the cycle will repeat.
 
-Right Ascension (RA): 16h 32m 40.6s
+Right Ascension (RA): 16h 32m 40.6s (248.18 degrees)
 
 Declination (Dec.): +66 (degree)45’ 17.9’’
 
@@ -147,7 +147,7 @@ F= Flux (Wm^-2). Apparent brightness
 
 d= distance (m)
 
-Right Ascension: 22h 03m 21.65s
+Right Ascension: 22h 03m 21.65s (330.84 degrees)
 
 Declination: -56 degrees 47’ 09.52’’
 
@@ -205,7 +205,7 @@ RW Aurigae binary star system:
 
 Constellation: Auriga
 
-RWAB Right Ascension: 5h 07m 49.4562s
+RWAB Right Ascension: 5h 07m 49.4562s (76.96 degrees)
 
 RWAB declination: +30 degrees 24’ 04.774’’
 
@@ -273,7 +273,7 @@ Constellation: Hydra
 
 A constellation is an area in the night sky containing a group of stars that form a pattern and has set boundaries.
 
-Right Ascension: 8h 55m 10.83s 
+Right Ascension: 8h 55m 10.83s (133.8 degrees)
 
 Declination: -07 degrees 14’ 42.5’’
 
@@ -315,7 +315,7 @@ Barnard’s star:
 
 Constellation: Ophiuchus
 
-Right Ascension: 17h 57m 48.5s
+Right Ascension: 17h 57m 48.5s (269.45 degrees)
 
 Declination: +04 degrees 41’ 36’’
 
