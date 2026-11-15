@@ -364,3 +364,6 @@ They can be caused by:
 -Conversion of energy: snapping converts stored magnetic energy into intense heat and radiation across entire electromagnetic spectrum from radio waves up to x-rays and gamma rays.
 
 Barnard’s star is useful as it is the closest single star to Earth and an ancient red dwarf, making it good for testing exoplanet detection techniques around low-mass stars and studying the stellar flare.
+
+
+AI was used as a tool to help gather information.
