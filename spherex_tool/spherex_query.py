@@ -49,6 +49,7 @@ Network access required: yes (queries IRSA's live SIA2 service).
 from __future__ import annotations
 
 import re
+import time
 from dataclasses import dataclass, field
 
 from astropy.coordinates import SkyCoord
@@ -81,6 +82,23 @@ DEFAULT_RADIUS = 1.0 * u.arcmin
 # Filenames encode the detector as "..._D[Detector]_spx_..." or
 # "...D[Detector]_spx_..." immediately before "_spx_". Capture that digit.
 _DETECTOR_PATTERN = re.compile(r"D(\d)_spx_")
+
+# IRSA's SIA2 endpoint has been observed to intermittently return transient
+# 502/503 errors (proxy/upstream errors) even when the service is generally
+# "up" (e.g. flipping 200 -> 502 -> 200 within minutes on 2026-11-15). These
+# are retried automatically with a short backoff before giving up, since a
+# single failure does not reliably indicate a real outage.
+MAX_QUERY_RETRIES = 4
+RETRY_BACKOFF_SECONDS = 5  # doubles each attempt: 5s, 10s, 20s, 40s
+_TRANSIENT_ERROR_MARKERS = ("502", "503", "Proxy Error", "upstream server", "Gateway")
+
+
+def _is_transient_error(exc: Exception) -> bool:
+    """Heuristic: does this exception look like a transient server-side error
+    (502/503/proxy/gateway) rather than a genuine client-side mistake (e.g. a
+    malformed query)? Used to decide whether a retry is worth attempting."""
+    text = str(exc)
+    return any(marker in text for marker in _TRANSIENT_ERROR_MARKERS)
 
 
 class SpherexQueryError(RuntimeError):
@@ -177,13 +195,36 @@ def search_spherex(
     """
     collections = WIDE_COLLECTIONS + (DEEP_COLLECTIONS if include_deep else [])
 
-    try:
-        table = Irsa.query_sia(pos=(target, radius), collection=collections)
-    except Exception as exc:  # noqa: BLE001
+    table = None
+    last_exc: Exception | None = None
+    delay = RETRY_BACKOFF_SECONDS
+
+    for attempt in range(1, MAX_QUERY_RETRIES + 1):
+        try:
+            table = Irsa.query_sia(pos=(target, radius), collection=collections)
+            last_exc = None
+            break
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            is_last_attempt = attempt == MAX_QUERY_RETRIES
+            if is_last_attempt or not _is_transient_error(exc):
+                # Either out of retries, or this doesn't look like a
+                # transient server error (e.g. bad query) -- don't bother
+                # waiting, fail now.
+                break
+            print(
+                f"IRSA SIA2 query attempt {attempt}/{MAX_QUERY_RETRIES} failed "
+                f"with a transient-looking error; retrying in {delay}s..."
+            )
+            time.sleep(delay)
+            delay *= 2  # exponential backoff: 5s, 10s, 20s, 40s
+
+    if last_exc is not None:
         raise SpherexQueryError(
             f"IRSA SIA2 query failed for target={target.to_string('hmsdms')}, "
-            f"radius={radius}, collections={collections}: {exc}"
-        ) from exc
+            f"radius={radius}, collections={collections} "
+            f"(after {MAX_QUERY_RETRIES} attempt(s)): {last_exc}"
+        ) from last_exc
 
     if table is None or len(table) == 0:
         table = Table(
