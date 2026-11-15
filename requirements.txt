@@ -1,0 +1,15 @@
+# Python 3.12. Use requirements.lock.txt for the validated complete environment.
+fastapi==0.163.1
+uvicorn==0.54.0
+python-multipart==0.0.33
+numpy==2.5.5
+pandas==3.1.1
+sep==1.4.1
+matplotlib==3.11.2
+scipy==1.18.1
+astropy==8.0.2
+reproject==0.21.0
+astroalign==2.6.2
+imageio==2.38.1
+pillow==13.0.0
+httpx==0.28.1

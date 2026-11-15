@@ -7,7 +7,9 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
     "build": "npm run typecheck && vite build",
     "lint": "eslint . --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:full": "node scripts/dev.mjs",
+    "test:frontend": "node --test tests/frontend.test.mjs"
   },
   "repository": {
     "type": "git",

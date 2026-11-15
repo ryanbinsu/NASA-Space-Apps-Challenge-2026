@@ -1,93 +1,118 @@
 # SPHEREx Motion Explorer
 
 Team Phys***'s NASA Space Apps Challenge 2026 project for **Planet X and SPHEREx**.
-The intended product compares observations of the same sky region over time.
 
-**Implemented:** React shell, loading/error/empty states and a validated empty static manifest.
-**Planned:** target/coordinate selection, image viewer, playback, differencing and archive acquisition.
-No astronomical observations or synthetic images are included.
+The main application now connects the team's Python moving-object pipeline to a React interface.
+Upload FITS or raster exposures, inspect aligned/cleaned/difference/Z images, play the sequence, review candidate tracklets and export the results.
 
-## Setup
+## Run the integrated application
 
-Use Node **24.22.3** (recorded in `.nvmrc`) with its bundled npm.
-Install Node using your normal trusted method. If nvm is already installed: `nvm install && nvm use`.
-Python is not required for the frontend.
-
+Requirements: **Node 24.22.3**, npm and **Python 3.12** (see .nvmrc and .python-version).
 From the repository root:
 
 ```bash
 npm ci
-npm run dev
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements.lock.txt
+npm run dev:full
 ```
 
-Open the URL printed by Vite, normally http://localhost:5173. Stop with Ctrl+C.
+Open **http://localhost:5173**. One command starts Python on loopback port 8000 and Vite on 5173; /api requests are proxied automatically. Ctrl+C stops both processes. Restart this command after Python changes.
 
-This workspace also has a checksum-verified official Linux x64 Node installation under ignored `.tools/`.
-To use it from WSL:
+For Windows-native development, create the venv with your Python 3.12 executable and use .venv/Scripts/python.exe for installation/checks. The Node launcher detects the platform. For this WSL repository, run everything inside Ubuntu; do not share node_modules between Windows and Linux.
+
+The existing workspace has ignored local toolchains. If Node is not on the WSL PATH:
 
 ```bash
 export PATH="$PWD/.tools/node-v24.22.3-linux-x64/bin:$PATH"
-npm ci
-npm run dev
+npm run dev:full
 ```
 
-Other developers install Node themselves; the local toolchain is not in Git.
-Keep Node, npm and node_modules in the same operating system. Use Ubuntu commands for this WSL repository.
+This workspace's .venv is already installed. On another machine, install Python/Node normally; .tools/ and .venv/ are not in Git. Python 3.14 on this machine could not build sep without Python headers; Python 3.12 was validated using its wheel.
+
+## Use the website
+
+1. Choose a published target or search the published manifest by ICRS RA/Dec and angular radius. The current manifest is empty; search does not contact an archive.
+2. Upload **3–8** comparable exposures: all FITS, or all PNG/JPEG/TIFF. Each must be 32×32 or larger, at most 1,048,576 pixels, at most 20 MiB; total upload limit is 100 MiB.
+3. For FITS, select the image HDU under Processing parameters. A celestial WCS is required. Standard images require enough shared stars for alignment.
+4. FITS observation times are read from MJD-OBS or DATE-OBS and converted from TIMESYS to UTC (UTC is the FITS default when TIMESYS is absent). Complete times are sorted. Optionally supply UTC overrides for every file.
+5. If any time is missing, the entire sequence uses upload order and frame units. Reorder files with the arrow buttons. Dates are never fabricated.
+6. Run analysis. Inspect all four image layers, timeline/playback, peak overlays and ranked three-frame tracklets. Select a tracklet for its coordinates and per-detection metrics.
+7. Download CSV, complete JSON/provenance and, when a tracklet exists, the top-candidate plot.
+
+Parameters expose the pipeline's image HDU, median filter size, background mesh, flux normalization, Z threshold, minimum peak area and minimum/maximum inter-frame displacement.
+
+Scores are **uncalibrated heuristic rankings**, not discovery probabilities. Pixel speed is per day with real times, otherwise per frame. A valid no-candidate result is not an analysis error or proof that no moving object exists.
 
 ## Commands
 
-| Command | Purpose |
+| Command | Responsibility |
 | --- | --- |
-| `npm run dev` | Development server |
-| `npm run typecheck` | Strict application and Vite configuration type checking |
-| `npm run build` | Type checks and production build into dist/ |
-| `npm run lint` | ESLint checks |
-| `npm run preview` | Locally serve an existing production build |
+| npm run dev:full | Python API + Vite on localhost:5173 |
+| npm run dev | Frontend only; API must already run for processing |
+| npm run typecheck | Application and Vite configuration checks |
+| npm run build | Type checks then production frontend in dist/ |
+| npm run lint | Root frontend/tooling checks, warnings fail |
+| npm run test:frontend | Built-in Node tests for coordinates and contracts |
+| npm run preview | Preview existing frontend build, proxying /api to 8000 |
+| .venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v | Mathematics and API regression tests |
 
-Use `npm install` for intentional dependency changes and review package.json and package-lock.json together.
-Use `npm ci` for clean installs from the lockfile. There is no browser test suite.
+To run Python separately:
 
-Phase 1 validation passed: clean npm ci, production build/type checks, ESLint and development-server HTTP checks.
-Targeted temporary loader checks accepted four valid shapes and rejected 17 invalid manifests; these fixtures are not published. Browser rendering was not tested.
+```bash
+.venv/bin/python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
+```
 
-Known dependency debt: npm audit reports seven moderate development-tool advisories arising from minimatch in typescript-eslint.
-The installed latest compatible lint toolchain has no compatible upstream fix reported; npm suggests a forced downgrade.
-No forced downgrade or major transitive override was applied. Production-only audit (npm audit --omit=dev) reports zero vulnerabilities.
-Recheck the lint dependency chain for an upstream fix when updating dependencies.
+API documentation: http://localhost:8000/docs.
+After npm run build, this same Python command also serves the built website at http://localhost:8000, including its API, for a local single-port run.
 
-## Architecture and team workflow
+## Architecture and ownership
 
-Offline Python processing will export browser images and JSON. A frontend service validates JSON before React consumes it.
-Static delivery supports curated targets; arbitrary-coordinate archive queries are not implemented.
+```text
+Browser :5173 → Vite /api proxy → FastAPI :8000 → moving_object_pipeline.py
+                                     ↓
+                              .runtime/runs/<id>/
+                         PNG layers + CSV + JSON + plot
+```
 
 | Location / owner | Responsibility |
 | --- | --- |
-| src/App.tsx and styles.css / Theo | UI and visualisations |
-| src/services/observations.ts / Ryan | Loading, validation and integration |
-| src/types/observations.ts / Ryan, Artem, Niyati | Provisional consumer types |
-| processing/ / Artem | Future acquisition, FITS processing, alignment and differencing |
-| public/observations/ | Public processed assets and manifest |
-| docs/ / Pranav with team review | Architecture, contract and demo documentation |
-| Niyati | Target selection and scientific validation |
-| Ryan | Architecture, repository management and eventual deployment |
+| src/components/ / Theo with Ryan integration | Upload controls, published targets, playback, results |
+| src/services/ and src/types/ / Ryan | Static and HTTP contracts, validation, coordinate matching |
+| moving_object_pipeline.py / Artem | Five scientific-processing stages |
+| backend/ / Ryan with Artem review | Upload validation, orchestration, artifact export and API |
+| public/observations/ | Optional curated static manifest/images |
+| Niyati | Data suitability, targets and scientific validation |
+| Pranav | Documentation, judging requirements and demo |
 
-Use focused branches and small pull requests. Run build and lint before review.
-Discuss contract changes with both producer and consumer owners. Artem and Niyati must review its scientific assumptions before real exports.
-Theo can develop the shell independently of acquisition.
+The separate sky/ Next.js project is the earlier viewer prototype and remains intact. Its target/search/playback concepts are connected in the root application; placeholder images and approximate targets are not used as scientific data. Use the root commands above for the integrated site, rather than starting a second frontend on port 3000.
 
-See [architecture](docs/ARCHITECTURE.md), [contract](docs/DATA_CONTRACT.md) and [processing boundary](processing/README.md).
+Use focused branches and review contract changes with both producer and consumer owners. No commits, pushes or deployment are implicit in local validation.
 
-For a detailed walkthrough, read [the codebase guide](docs/CODEBASE.md) and [the infrastructure guide](docs/INFRASTRUCTURE.md).
-AI contributors should read [AGENTS.md](AGENTS.md); Claude Code users should also read [CLAUDE.md](CLAUDE.md).
-Do not add credentials, raw bulk downloads or large intermediate files to Git. Everything in public/ is publicly served.
-Coordinate processed asset sizes; no bulk storage or Git LFS is configured.
+## Guides
 
-Vercel deployment is planned, not performed. Expected build: `npm run build`; output: `dist`.
-No backend, database or authentication is part of this milestone.
+- [Architecture](docs/ARCHITECTURE.md)
+- [Codebase walkthrough](docs/CODEBASE.md)
+- [Infrastructure](docs/INFRASTRUCTURE.md)
+- [API contract and mathematics](docs/INTEGRATION.md)
+- [Curated static data contract](docs/DATA_CONTRACT.md)
+- [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md)
 
-## Sources
+## Limitations and scientific provenance
 
-- [Official challenge](https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/?tab=details): inaccessible during Phase 1 research; detailed requirements remain unverified.
-- [Official archive access documentation](https://caltech-ipac.github.io/spherex-archive-documentation/spherex-data-access/): consulted to establish future acquisition boundaries. No archive calls are implemented.
+No live SPHEREx archive query/acquisition code or real observation dataset was supplied in this repository.
+Uploaded provenance remains user supplied; WCS, dates and candidate rankings require scientific review. No Planet X detection claim is made.
+The backend uses approximate scalar noise and a median reference, not a calibrated significance/probability model.
 
-Suitable comparable observations for selected targets have not yet been established.
+Runs are stored locally under ignored .runtime/; there is no database, authentication, automatic retention cleanup or remote storage.
+The local API is loopback-only and processes one run at a time. Public multi-user deployment needs separate operational design; Vercel static hosting alone cannot execute this Python pipeline.
+
+Validation used explicitly synthetic fixtures, not NASA observations. See the integration guide for checks and limitations.
+The earlier frontend audit recorded moderate development lint advisories; recheck npm audit before describing current status. No forced dependency downgrade was applied.
+
+## Authoritative references
+
+- [Official challenge](https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/?tab=details)
+- [SPHEREx archive access documentation](https://caltech-ipac.github.io/spherex-archive-documentation/spherex-data-access/)
+
+The challenge page was inaccessible during initial research. Verify detailed judging/science requirements against the official source; do not infer archive capabilities from this local pipeline.

@@ -1,49 +1,55 @@
-# Phase 1 architecture
+# Integrated application architecture
 
-This page summarizes the design. For implementation details, see [the codebase walkthrough](CODEBASE.md); for local tooling and hosting status, see [the infrastructure guide](INFRASTRUCTURE.md).
+The approved scope now includes the team's local Python pipeline and a connected frontend.
 
 ```mermaid
 flowchart LR
-    Archive["SPHEREx archive"] --> Python["Offline Python processing - planned"]
-    Python --> Assets["Static JSON manifest and processed images"]
-    Assets --> Loader["Frontend fetch and runtime validation"]
-    Loader --> React["React shell"]
+    Browser["React on localhost:5173"] --> Vite["Vite /api proxy"]
+    Vite --> API["FastAPI on loopback:8000"]
+    API --> Pipeline["Five-stage Python pipeline"]
+    Pipeline --> Runs["Local .runtime/runs artifacts"]
+    Runs --> Browser
+    Manifest["Optional public manifest/images"] --> Browser
 ```
 
-Only the empty manifest, loader and shell are implemented. The planned producer appears to explain the integration boundary.
+After a production build, the API can also serve dist/ directly on port 8000. Neither path has been deployed publicly.
 
-## Responsibilities
+## Responsibilities and boundaries
 
-- Artem's future Python pipeline acquires products, checks quality, aligns images and exports documented spectral selections, rendering choices and provenance.
-- Static assets are public browser images and metadata. Raw FITS is not a frontend input.
-- The contract is a cross-language agreement reviewed by Ryan, Artem and Niyati; TypeScript represents the consumer's view.
-- Ryan's loader checks HTTP success, schema version, required fields, bounds, times and ordering. Malformed manifests fail explicitly.
-- Theo's UI renders loading, error and empty states. A count acknowledges future ready records without implementing a viewer.
-- Niyati validates scientific interpretation and comparability; Pranav documents actual capabilities and limitations.
-
-## Decisions
-
-| Choice | Reason and trade-off |
+| Component | Responsibility |
 | --- | --- |
-| One root-level Vite application | One install/build; no workspace or nested application configuration overhead |
-| Offline processing and static delivery | Predictable demonstration without live service dependency; new data requires another build/publication |
-| JSON boundary | Python and React can evolve independently; fetched data still needs runtime checks |
-| Strict TypeScript and ESLint | Catch integration mistakes; no routing or global state framework needed |
-| Plain CSS | Adequate for the shell; substantial UI remains Theo's responsibility |
+| src/components/PublishedObservations.tsx | Curated target selection, spherical region matching and reviewed comparison-group selection |
+| src/components/AnalysisWorkbench.tsx | Upload/settings form, processing state, rankings, metadata and downloads |
+| src/components/ObservationViewer.tsx | Shared playback, timeline, image layers and pixel overlays |
+| src/services/ | HTTP/static loading, runtime response validation and coordinate matching |
+| backend/app.py | Multipart input bounds, single-run lock, API errors and artifact/static serving |
+| backend/analysis.py | File checks, time ordering, stage orchestration, valid-footprint masking and JSON/image exports |
+| moving_object_pipeline.py | Alignment, cleaning, significance, track metrics and heuristic reporting |
+| public/observations/ | Optional curated data; currently empty |
+| .runtime/ | Generated local run artifacts, excluded from Git |
 
-Backend/database and full-stack frameworks add operations without a Phase 1 responsibility.
-Browser FITS processing would put scientific work and large downloads in the presentation layer.
-A shared npm package would add maintenance for a single JavaScript consumer.
+Ryan owns integration/API boundaries; Artem owns the scientific pipeline; Theo owns UI; Niyati validates data/interpretation; Pranav owns documentation/demo preparation.
 
-The manifest URL uses Vite's base URL. Future viewers must resolve image paths against the manifest directory.
-Broken image requests must become explicit errors when image display is implemented.
+## Decisions and trade-offs
 
-## Constraints and conscious debt
+The pulled Python script had no network interface. FastAPI is the smallest added application service here that handles uploads, parameter validation, explicit errors and generated API documentation.
+Uvicorn serves it; python-multipart parses browser uploads. There is still no database, auth or task-queue framework.
 
-Runtime validation checks shape, not scientific truth. A ready record is a producer claim; it cannot prove calibration, alignment or authentic provenance.
-Comparison groups must document a reviewed common grid and rendering method. Equal dimensions or wavelength bounds alone do not establish comparability.
-Visible changes may be instrumental or processing artifacts; a timelapse does not establish a Planet X detection.
+The root Vite app is the single integrated frontend. The sky/ Next.js prototype remains intact; its interaction concepts were connected in the root app without importing placeholder astronomy data or maintaining two active frontend frameworks.
 
-The provisional contract needs Artem and Niyati's approval. Keep the hand-written validator, types and contract synchronized.
-Whole-manifest rejection favors clear failures over partial recovery; revisit if the curated dataset grows.
-No live integration, pipeline, viewer, difference-image contract, CI, Docker or deployment is implemented.
+A Vite proxy gives the browser one origin and avoids a development CORS configuration. Node's built-in child_process starts both services, avoiding another npm process-management dependency.
+
+Analysis is synchronous and bounded to small batches. A nonblocking lock returns 409 for concurrent requests. This favors a reliable local demonstration over multi-user scalability. Disconnecting the browser does not cancel an already running Python calculation.
+
+Generated artifacts live in UUID run directories. Raw uploads are temporary. There is no persistent job registry, user history, automatic cleanup or storage service.
+
+## Scientific and operational constraints
+
+A valid request and finite output do not certify scientific comparability. The UI exposes approximate significance and heuristic ranking with explicit caveats.
+Complete real timestamps produce pixel/day metrics; incomplete times use frame units consistently. No date is invented.
+Different curated comparison groups cannot be played as one sequence.
+
+Live arbitrary-coordinate archive acquisition remains absent. The coordinate search only matches target centers from the curated manifest.
+The API output and curated publication contract are different interfaces; publishing real data still needs review.
+
+See [the code walkthrough](CODEBASE.md), [infrastructure](INFRASTRUCTURE.md) and [API/mathematics](INTEGRATION.md) for operational detail.

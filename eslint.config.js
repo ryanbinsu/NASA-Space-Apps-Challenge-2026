@@ -5,7 +5,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default tseslint.config(
-  { ignores: ['dist/**', '.tools/**'] },
+  { ignores: ['dist/**', '.tools/**', '.venv/**', '.runtime/**', 'sky/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -17,5 +17,5 @@ export default tseslint.config(
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
   },
-  { files: ['*.{js,ts}'], languageOptions: { globals: globals.node } },
+  { files: ['*.{js,ts}', 'scripts/**/*.mjs', 'tests/**/*.mjs'], languageOptions: { globals: globals.node } },
 )
