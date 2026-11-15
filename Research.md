@@ -1,3 +1,5 @@
+Written by: Niyati Jayeshkumar Bhatt
+
 SphereX Mission targets:
 -More than 450 million galaxies: Maps the universe in 3D, scans the entire sky 4 times to create a comprehensive 3D map of 450 million+ galaxies.
 
