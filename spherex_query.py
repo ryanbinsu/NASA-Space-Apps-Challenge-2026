@@ -15,6 +15,20 @@ Verified against current (Nov 2026) IRSA documentation:
   energy_bandpassname, s_fov, obs_collection, obs_release_date,
   cloud_access.
 
+Cloud access (NEW)
+-------------------
+The `cloud_access` column is passed straight through from IRSA's SIA2
+response, unmodified, to `spherex_download.py`. Per IRSA's Cloud Data
+Access documentation, this column contains a per-row JSON blob such as:
+
+    {"aws": {"bucket_name": "nasa-irsa-spherex", "key": "...", "region": "us-east-1"}}
+
+for exposures already mirrored to AWS S3. It can be empty/masked for rows
+that are not (yet) mirrored -- `spherex_download.py` handles that by
+falling back to `access_url` (on-premises HTTP). This module does no
+cloud-specific processing itself; it simply makes sure the column
+survives the detector-column-injection and sorting steps below.
+
 Design notes / assumptions
 ---------------------------
 - "All exposures available" (per project decision) means NO deduplication
@@ -36,7 +50,8 @@ Design notes / assumptions
 - Results are sorted by t_min (MJD) ascending, i.e. chronological order,
   which is what a "blink" video needs.
 - No files are downloaded in this module -- it only returns metadata deemed
-  needed for `spherex_download.py` to do the actual retrieval. This keeps
+  needed for `spherex_download.py` to do the actual retrieval (either from
+  AWS S3 via `cloud_access`, or on-premises via `access_url`). This keeps
   the two concerns independent and testable separately.
 
 Dependencies
@@ -97,8 +112,10 @@ class QueryResult:
     table : astropy.table.Table
         One row per exposure (Spectral Image MEF), sorted chronologically
         by t_min. Includes an added 'detector' integer column (1-6) parsed
-        from the access_url, and a 'release' column showing which of the
-        queried collections the row came from (useful for logging/debug).
+        from the access_url, a 'release' column showing which of the
+        queried collections the row came from (useful for logging/debug),
+        and the original SIA2 'cloud_access' column (JSON string with AWS
+        S3 bucket/key/region, or empty/masked if not cloud-mirrored).
     target : SkyCoord
         The queried sky position, for provenance/manifest purposes.
     radius : astropy.units.Quantity
@@ -113,6 +130,15 @@ class QueryResult:
 
     def __len__(self) -> int:
         return len(self.table)
+
+    def n_cloud_available(self) -> int:
+        """Count rows that have a usable (non-empty) cloud_access entry."""
+        if "cloud_access" not in self.table.colnames:
+            return 0
+        return sum(
+            1 for v in self.table["cloud_access"]
+            if v is not None and str(v).strip() and str(v).strip().lower() not in ("--", "nan", "none")
+        )
 
     def filter_by_detector(self, detectors) -> "QueryResult":
         """
@@ -187,8 +213,8 @@ def search_spherex(
 
     if table is None or len(table) == 0:
         table = Table(
-            names=["access_url", "obs_id", "t_min", "t_max", "s_ra", "s_dec"],
-            dtype=["U512", "U128", "f8", "f8", "f8", "f8"],
+            names=["access_url", "cloud_access", "obs_id", "t_min", "t_max", "s_ra", "s_dec"],
+            dtype=["U512", "U1024", "U128", "f8", "f8", "f8", "f8"],
         )
 
     # Attach a parsed 'detector' column.

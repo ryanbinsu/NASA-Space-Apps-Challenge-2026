@@ -64,6 +64,7 @@ def fetch_target(
     detectors: list[int] | None = None,
     max_exposures: int | None = None,
     interactive: bool = True,
+    prefer_cloud: bool = True,
 ):
     """Resolve, query, and download exposures for a target. Returns the
     resolved target label (or None on failure)."""
@@ -92,6 +93,12 @@ def fetch_target(
         print("Nothing to download.")
         return None
 
+    n_cloud = result.n_cloud_available()
+    print(
+        f"{n_cloud}/{len(result)} exposure(s) have AWS S3 cloud access info "
+        f"available; {'will prefer cloud reads' if prefer_cloud else 'cloud reads disabled, using IRSA HTTP'}."
+    )
+
     if interactive and max_exposures is None and len(result) > 10:
         cap_raw = input(
             f"This will download {len(result)} files (~{len(result) * 65} MB "
@@ -106,7 +113,8 @@ def fetch_target(
 
     print(f"Downloading and splitting into {OUTPUT_ROOT / resolved.label} ...")
     exposures = download_and_split(
-        result.table, OUTPUT_ROOT, resolved.label, max_exposures=max_exposures
+        result.table, OUTPUT_ROOT, resolved.label,
+        max_exposures=max_exposures, prefer_cloud=prefer_cloud,
     )
     n_skipped = sum(e.skipped for e in exposures)
     print(
@@ -189,6 +197,12 @@ def main():
     parser.add_argument("--max-step-px", type=float, default=50.0, help="Max per-frame motion in pixels (default 50).")
     parser.add_argument("--skip-fetch", action="store_true", help="Skip download; detect only on existing data for --target-label.")
     parser.add_argument("--target-label", help="Existing ./spherex_output/<label> folder name (used with --skip-fetch).")
+    parser.add_argument(
+        "--no-cloud", action="store_true",
+        help="Disable AWS S3 cloud reads; always download via IRSA on-premises HTTP "
+             "(access_url). Default is to prefer the free, anonymous S3 mirror "
+             "(nasa-irsa-spherex bucket) and fall back to HTTP automatically.",
+    )
     args = parser.parse_args()
 
     detectors = None
@@ -224,6 +238,7 @@ def main():
             detectors=detectors,
             max_exposures=args.max_exposures,
             interactive=interactive,
+            prefer_cloud=not args.no_cloud,
         )
         if target_label is None:
             sys.exit(1)

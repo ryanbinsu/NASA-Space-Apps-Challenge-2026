@@ -6,3 +6,7 @@ scipy
 matplotlib
 sep
 reproject
+fsspec
+s3fs
+aiohttp
+boto3
