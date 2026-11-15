@@ -83,7 +83,7 @@ Failed runs may leave empty/partial output directories. Disk usage should be mon
 
 ## Hosting status and remaining work
 
-No public deployment, CI workflow, database, authentication, queue, remote object store or Docker setup is implemented.
+A GitHub CI workflow now validates the web stack and delivers a frontend build artifact; see [development and delivery](DEVELOPMENT.md). It has not yet run remotely. No public deployment, database, authentication, queue, remote object store or Docker setup is implemented.
 Vercel was proposed for a static frontend; static hosting alone cannot execute the scientific Python API.
 A future public host must provide a compatible Python runtime/API, same-origin routing or deliberate CORS, storage limits, ingress controls and multi-user operational decisions.
 These are future hosting decisions, not prerequisites added to the local demonstration.

@@ -89,6 +89,17 @@ The separate sky/ Next.js project is the earlier viewer prototype and remains in
 
 Use focused branches and review contract changes with both producer and consumer owners. No commits, pushes or deployment are implicit in local validation.
 
+## Submission and repository map
+
+- **Run the website:** root npm commands above; frontend in src/, API in backend/.
+- **Scientific implementation used by the website:** moving_object_pipeline.py.
+- **Separate archive CLI:** root spherex_*.py modules and requirements_v2.txt; instructions in docs/ARCHIVE_PIPELINE.md.
+- **Earlier UI prototype:** sky/, retained for team history; not the submitted runtime entry point.
+- **Research:** [Niyati's authored notes](docs/research/RESEARCH.md).
+- **Judge/demo handoff:** [submission guide](docs/SUBMISSION.md).
+- **Continuous integration and delivery:** [development/release guide](docs/DEVELOPMENT.md).
+- **Documentation index:** [docs/README.md](docs/README.md).
+
 ## Guides
 
 - [Architecture](docs/ARCHITECTURE.md)
@@ -100,7 +111,7 @@ Use focused branches and review contract changes with both producer and consumer
 
 ## Limitations and scientific provenance
 
-No live SPHEREx archive query/acquisition code or real observation dataset was supplied in this repository.
+A separate coordinate-to-archive CLI is now present in the root spherex_*.py modules; it is not wired into the website. See [archive CLI instructions](docs/ARCHIVE_PIPELINE.md). No real observation dataset is bundled; live archive execution was not validated during submission cleanup.
 Uploaded provenance remains user supplied; WCS, dates and candidate rankings require scientific review. No Planet X detection claim is made.
 The backend uses approximate scalar noise and a median reference, not a calibrated significance/probability model.
 

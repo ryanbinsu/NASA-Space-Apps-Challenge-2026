@@ -1,4 +1,8 @@
-# SPHEREx Coordinate-to-Discovery Pipeline
+# Standalone SPHEREx coordinate-to-discovery CLI
+
+Run commands from the **repository root**. This CLI is separate from the web API, which still uses moving_object_pipeline.py. Its network-dependent workflows were not run during final submission cleanup. Read [the mathematics review](MATHEMATICS_REVIEW.md) before interpreting its outputs.
+
+Historical development claims below are not independent scientific validation; the source review records outstanding limitations.
 
 This tool takes a sky coordinate (or object name), finds overlapping SPHEREx
 exposures, downloads them, and searches for moving objects (asteroids,
@@ -21,19 +25,14 @@ source wheels on some platforms; if `pip install` fails on `sep`, try
 
 | File | Purpose |
 |---|---|
-| `spherex_coords.py` | Parses the target string (sexagesimal, decimal RA/Dec, or object name) into a resolved `SkyCoord` + label. *(not included here — see note below)* |
-| `spherex_query.py` | Queries IRSA's SIA2 service for SPHEREx exposures overlapping the target. *(not included here — see note below)* |
-| `spherex_download.py` | Downloads matching exposures, splits multi-extension FITS into per-HDU files, writes `manifest.csv`. *(not included here — see note below)* |
+| `spherex_coords.py` | Parses the target string (sexagesimal, decimal RA/Dec, or object name) into a resolved `SkyCoord` + label. |
+| `spherex_query.py` | Queries IRSA's SIA2 service for SPHEREx exposures overlapping the target. |
+| `spherex_download.py` | Downloads matching exposures, splits multi-extension FITS into per-HDU files, writes `manifest.csv`. |
 | `spherex_detect.py` | The 5-step detection pipeline: WCS alignment, noise/background removal, Z-score differencing, tracklet linking, confidence scoring. |
 | `spherex_pipeline.py` | The main CLI — chains all of the above end to end. **Run this one.** |
-| `requirements_v2.txt` | Full dependency list for the combined pipeline. |
+| `requirements_v2.txt` | Unpinned direct dependencies for the standalone CLI. |
 
-> **Note:** This zip contains `spherex_detect.py` and `spherex_pipeline.py`,
-> which were developed/updated in this conversation. `spherex_coords.py`,
-> `spherex_query.py`, and `spherex_download.py` are imported by
-> `spherex_pipeline.py` but were written earlier and are not part of this
-> export — place your existing copies of those three files in the same
-> folder before running.
+All five Python modules listed above are present at the repository root. Keep them together: their imports and output paths assume this layout. requirements_v2.txt is an unpinned standalone dependency list; it is separate from the web stack's requirements.lock.txt.
 
 ## 3. Running it
 
@@ -105,7 +104,7 @@ Detectors with fewer than 3 usable exposures are automatically skipped
 |---|---|
 | `candidate_id` | Arbitrary ID (`OBJ_001`, `OBJ_002`, ...), sorted by confidence |
 | `detector` | Which of the 6 SPHEREx detectors this came from |
-| `confidence` | 0-1 calibrated score combining SNR and motion straightness/consistency |
+| `confidence` | 0-1 uncalibrated heuristic ranking combining SNR and motion straightness/consistency; not a probability |
 | `mean_snr_z` | Average peak Z-score (significance) across the 3 linked frames |
 | `speed_px_per_unit_t` | Fitted speed in pixels per day (MJD units) |
 | `linearity_rmse_px` | How well the 3 points fit a straight line (lower = better) |

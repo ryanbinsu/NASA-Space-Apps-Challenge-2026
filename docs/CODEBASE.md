@@ -4,6 +4,8 @@ The integrated site runs from the repository root. Read [architecture](ARCHITECT
 
 ## Repository map
 
+New standalone archive tools also live at the root: spherex_coords.py, spherex_query.py, spherex_download.py, spherex_detect.py and spherex_pipeline.py. Their [CLI guide](ARCHIVE_PIPELINE.md) and [separate mathematical caveats](MATHEMATICS_REVIEW.md) distinguish them from the website; the web API still imports moving_object_pipeline.py.
+
 | Location | Responsibility |
 | --- | --- |
 | index.html, src/main.tsx | Browser entry and React mounting |

@@ -1,5 +1,3 @@
-Written by: Niyati Jayeshkumar Bhatt
-
 SphereX Mission targets:
 -More than 450 million galaxies: Maps the universe in 3D, scans the entire sky 4 times to create a comprehensive 3D map of 450 million+ galaxies.
 
@@ -18,21 +16,6 @@ Core scientific goals:
 3. Find where water and chemical building blocks of life are from, and how likely they are to be on other planets. Use absorption spectroscopy.
 
 
-Challenge objectives:
-
-1.Create a workable frontend site that could facilitate future discoveries and observations of
-stellar bodies - integrated frontend and backend, with searching functions and customisation
-for radius of searching, how many exposures, etc.
-
-2.Simple to use and explained well for users
-
-3.Data analysis and cleaning to ensure images and slideshows are able to be analysed
-
-4.Work as a multidisciplinary team to foster a delegation and cooperation framework
-
-5.Create a demo to demonstrate how the finished product could be used for research
-
-
 
 R Draconis:
 About:
@@ -47,7 +30,7 @@ By using Wien’s law and R Draconis’ cool temperatures, we can predict the pe
 
 How the pulsation works briefly: Partial ionisation of hydrogen makes the layer more opaque, trapping heat. The surface that traps heat, and builds up pressure and radiation underneath the layer, which eventually means the pressure overcomes the gravitational forces, pushing the atmosphere of the star outwards, the radius of the star will increase. The gas will expand and cool, electrons will combine with atoms. When electrons combine, this makes the gas more transparent and therefore heat escapes causing a pressure drop. And the cycle will repeat.
 
-Right Ascension (RA): 16h 32m 40.6s (248.18 degrees)
+Right Ascension (RA): 16h 32m 40.6s
 
 Declination (Dec.): +66 (degree)45’ 17.9’’
 
@@ -76,7 +59,7 @@ A are hot white stars with a range 7,500-10,000K.
 
 F and G are yellow-white to yellow stars. The sun is a G type star. 5,200-6,000K for G and 6,000-7,500K for F.
 
-K are cooler orange stars with a temperature ranging from 3,700 to 5,200K. M are the coolest of stars, they glow red or a deep orange with temperatures of around under 3,700K.
+K are cooler orange stars with a temperature ranging from 3,700 to 5,200K.M are the coolest of stars, they glow red or a deep orange with temperatures of around under 3,700K.
 
 Number subdivisions (0-9)
 
@@ -162,7 +145,7 @@ F= Flux (Wm^-2). Apparent brightness
 
 d= distance (m)
 
-Right Ascension: 22h 03m 21.65s (330.84 degrees)
+Right Ascension: 22h 03m 21.65s
 
 Declination: -56 degrees 47’ 09.52’’
 
@@ -220,7 +203,7 @@ RW Aurigae binary star system:
 
 Constellation: Auriga
 
-RWAB Right Ascension: 5h 07m 49.4562s (76.96 degrees)
+RWAB Right Ascension: 5h 07m 49.4562s
 
 RWAB declination: +30 degrees 24’ 04.774’’
 
@@ -288,7 +271,7 @@ Constellation: Hydra
 
 A constellation is an area in the night sky containing a group of stars that form a pattern and has set boundaries.
 
-Right Ascension: 8h 55m 10.83s (133.8 degrees)
+Right Ascension: 8h 55m 10.83s 
 
 Declination: -07 degrees 14’ 42.5’’
 
@@ -330,7 +313,7 @@ Barnard’s star:
 
 Constellation: Ophiuchus
 
-Right Ascension: 17h 57m 48.5s (269.45 degrees)
+Right Ascension: 17h 57m 48.5s
 
 Declination: +04 degrees 41’ 36’’
 
@@ -381,6 +364,3 @@ They can be caused by:
 -Conversion of energy: snapping converts stored magnetic energy into intense heat and radiation across entire electromagnetic spectrum from radio waves up to x-rays and gamma rays.
 
 Barnard’s star is useful as it is the closest single star to Earth and an ancient red dwarf, making it good for testing exoplanet detection techniques around low-mass stars and studying the stellar flare.
-
-
-AI was used as a tool to help gather information.

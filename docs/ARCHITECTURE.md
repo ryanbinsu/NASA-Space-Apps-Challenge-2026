@@ -49,7 +49,7 @@ A valid request and finite output do not certify scientific comparability. The U
 Complete real timestamps produce pixel/day metrics; incomplete times use frame units consistently. No date is invented.
 Different curated comparison groups cannot be played as one sequence.
 
-Live arbitrary-coordinate archive acquisition remains absent. The coordinate search only matches target centers from the curated manifest.
+The web API has no live-coordinate acquisition route. Separate root spherex_*.py tools provide a standalone archive workflow; see [archive CLI instructions](ARCHIVE_PIPELINE.md). The coordinate search only matches target centers from the curated manifest.
 The API output and curated publication contract are different interfaces; publishing real data still needs review.
 
 See [the code walkthrough](CODEBASE.md), [infrastructure](INFRASTRUCTURE.md) and [API/mathematics](INTEGRATION.md) for operational detail.

@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend checks and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Test frontend contracts and coordinates
+        run: npm run test:frontend
+      - name: Type-check and build
+        run: npm run build
+      - name: Preserve frontend build for review
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  python:
+    name: Python mathematics and API checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      MPLBACKEND: Agg
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements.lock.txt
+      - name: Install validated runtime and test dependencies
+        run: python -m pip install -r requirements.lock.txt
+      - name: Check dependency compatibility
+        run: python -m pip check
+      - name: Test integrated mathematics and upload API
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Syntax-check standalone acquisition modules only
+        # These newer modules are not covered by the upload API tests above.
+        # No imports, live archive queries or scientific validation are performed.
+        run: python -m compileall -q spherex_*.py

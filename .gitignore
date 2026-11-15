@@ -11,3 +11,11 @@ __pycache__/
 .DS_Store
 
 .runtime/
+
+# Standalone archive downloads/results and local validation artifacts
+spherex_output/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
+*.log
